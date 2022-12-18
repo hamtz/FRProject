@@ -16,6 +16,7 @@ import calendar
 import threading
 
 import pyrebase
+import FCMManager as fcm
 
 import os.path
 
@@ -31,7 +32,8 @@ camera = cv2.VideoCapture(1)  # use 0 for web camera
 #  for cctv camera use rtsp://username:password@ip_address:554/user=username_password='password'_channel=channel_number_stream=0.sdp' instead of camera
 # for local webcam use cv2.VideoCapture(0)
 
-
+# token my security android app
+tokens = ["dM1vXSIISD-PI2xFdZVAW2:APA91bEeWk2HPe5obNoL8gyaLREufwrp9vubklvj7zBU9GK6V1-UQuinv0couFPw52pIQKWJvOBoNQoqgwdIhgz3HnmSKhM_-_p7O5MVTWJSy7EZZ1nwzH8vTZZPElDNFVlWLy_d3yTS"]
 firebaseConfig = {"apiKey": "AIzaSyAKT2QoArXJFwoad4se-zjox44Y0AhmG2U", "authDomain": "realtimefr-e7201.firebaseapp.com",
                   "databaseURL": "https://realtimefr-e7201-default-rtdb.firebaseio.com/",
                   "projectId": "realtimefr-e7201", "storageBucket": "realtimefr-e7201.appspot.com",
@@ -179,6 +181,7 @@ def genFrames():  # generate frame by frame from camera
                     # print(name)
                     setlistName(name)
                     pushlistName(name)
+                    fcm.sendPush("Warning", "An unknown person has detected", tokens)
 
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
