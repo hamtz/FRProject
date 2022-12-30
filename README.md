@@ -36,6 +36,7 @@ buffer.tobytes()
     ``pyi-makespec app.py --exclude-module PyQt5``
 
 2. edit the spec file
+
             a = Analysis(
                 ['app.py'],
                 pathex=[],
@@ -60,3 +61,26 @@ buffer.tobytes()
 
 
 5. then copy the `ImagesTrain`, `static` and `template` folder from folder project to result folder from pyinstaller in `dist/app`
+
+
+
+fixing firebase_admin error 'status'========================================>
+https://stackoverflow.com/questions/56212844/how-to-fix-firebase-admin-error-typeerror-init-got-an-unexpected-keyword
+
+
+before making a exe file with pyinstaller let:
+1. Go to this file(Got this from the error you have given) -> C:\Users\Gaming\Firbase_setup\venv\lib\site-packages\firebase_admin_http_client.py
+
+2. Comment the following lines from firebase_admin_http_client.py:
+
+    #from requests.packages.urllib3.util import retry
+    #DEFAULT_RETRY_CONFIG = retry.Retry(
+    #connect=1, read=1, status=4, status_forcelist=[500, 503],
+    #raise_on_status=False, backoff_factor=0.5)
+
+3. Also change the init parameter as below in the same file:
+
+
+    def __init__(
+        self, credential=None, session=None, base_url='', headers=None,
+        retries=1, timeout=300):
