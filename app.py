@@ -5,7 +5,9 @@ from django.shortcuts import redirect
 import face_recognition
 from flask import Flask, redirect, url_for, render_template, request, flash, Response, send_from_directory
 import cv2
+from PIL import Image
 import numpy as np
+from numpy import asarray
 
 from werkzeug.utils import secure_filename
 
@@ -33,7 +35,9 @@ camera = cv2.VideoCapture(1)  # use 0 for web camera
 # for local webcam use cv2.VideoCapture(0)
 
 # token my security android app
-tokens = ["dM1vXSIISD-PI2xFdZVAW2:APA91bEeWk2HPe5obNoL8gyaLREufwrp9vubklvj7zBU9GK6V1-UQuinv0couFPw52pIQKWJvOBoNQoqgwdIhgz3HnmSKhM_-_p7O5MVTWJSy7EZZ1nwzH8vTZZPElDNFVlWLy_d3yTS"]
+# tokens = ["dM1vXSIISD-PI2xFdZVAW2:APA91bEeWk2HPe5obNoL8gyaLREufwrp9vubklvj7zBU9GK6V1-UQuinv0couFPw52pIQKWJvOBoNQoqgwdIhgz3HnmSKhM_-_p7O5MVTWJSy7EZZ1nwzH8vTZZPElDNFVlWLy_d3yTS"]
+tokens = ["eNIG8mXEQsOmbrpoM-ji2i:APA91bFLONQsjH_F1dAVJVbBx9lrgy9WHy8A5aWonGWS_Cw24o6Dgvo8jHOavodpKkmCdiXJ4kAqsGCZJLuMsLtj916D1OW8wSzPuFvrkMqPmT8kuxHKsPFayloaT6YQOsBrH6DbAReG"]
+
 firebaseConfig = {"apiKey": "AIzaSyAKT2QoArXJFwoad4se-zjox44Y0AhmG2U", "authDomain": "realtimefr-e7201.firebaseapp.com",
                   "databaseURL": "https://realtimefr-e7201-default-rtdb.firebaseio.com/",
                   "projectId": "realtimefr-e7201", "storageBucket": "realtimefr-e7201.appspot.com",
@@ -55,19 +59,19 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# @app.route('/encodeCurrImage', methods=['GET', 'POST'])
+@app.route('/encodeCurrImage', methods=['GET', 'POST'])
 # def encodeCurrImage():
-
-for cl in myList:
-    curImg = cv2.imread(f'{path}/{cl}')
-    images.append(curImg)
-    classNames.append(os.path.splitext(cl)[0])
-    data = classNames
-    db.child("classNames").set(data)
-print(classNames)
+def setClassNames():
+    # images = []
+    # classNames = []
+    for cl in myList:
+        curImg = cv2.imread(f'{path}/{cl}')
+        images.append(curImg)
+        classNames.append(os.path.splitext(cl)[0])
+        data = classNames
+        db.child("classNames").set(data)
+    print(classNames)
     # return redirect('/')
-
-# encodeCurrImage()
 
 def findEncodings(images):
     encodeList = []
@@ -80,6 +84,7 @@ def findEncodings(images):
     return encodeList
 
 
+setClassNames()
 encodeListKnown = findEncodings(images)
 # db.child("encodeList").push(encodeListKnown)
 
@@ -225,7 +230,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# GAGAL==================================================================
+# BERHASIL ==================================================================
 @app.route('/upload_image', methods=['GET', 'POST'])
 def upload_image():
     if request.method == 'POST':
@@ -242,22 +247,44 @@ def upload_image():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return redirect(url_for('uploaded_file', filename=filename))
-    return '''
-        <!doctype html>
-        <title>Upload new File</title>
-        <h1>Upload new File</h1>
-        <form method=post enctype=multipart/form-data>
-          <input type=file name=file>
-          <input type=submit value=Upload>
-        </form>
-        '''
+
+            curImg = cv2.imread(file.filename)
+            images.append(curImg)
+            classNames.append(os.path.splitext(filename)[0])
+            data = classNames
+            db.child("classNames").set(data)
+            print(classNames)
+
+            imgUp = Image.open(os.path.join(
+                app.config['UPLOAD_FOLDER'], filename))
+            imgNump = asarray(imgUp)
+            img = cv2.cvtColor(imgNump, cv2.COLOR_BGR2RGB)
+            addEncode = face_recognition.face_encodings(img)[0]
+            encodeListKnown.append(addEncode)
+
+            return redirect(url_for('index'))
+    return render_template("upload_image.html")
+    #
+    # '''
+    #     <!doctype html>
+    #     <title>Upload new File</title>
+    #     <h1>Upload new File</h1>
+    #     <form method=post enctype=multipart/form-data>
+    #       <input type=file name=file>
+    #       <input type=submit value=Upload>
+    #     </form>
+    #     '''
 
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+# @app.route('/uploads/<filename>')
+@app.route('/uploads')
+def upload_success():
+    # send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+    print(myList)
+
+    return render_template("index.html")
 
 # GAGAL============================================================
 # @app.route('/upload_image', methods=['POST'])
