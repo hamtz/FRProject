@@ -1,8 +1,12 @@
+import os
 
 import firebase_admin
 from firebase_admin import credentials, messaging
 
-cred = credentials.Certificate("C:/Users/Riku/Documents/Titip/Ilham/Kuliax/App/FR/realtimefr-e7201-firebase-adminsdk-l2vta-55238c5548.json")
+SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
+
+# cred = credentials.Certificate("C:/Users/Riku/Documents/Titip/Ilham/Kuliax/App/FR/realtimefr-e7201-firebase-adminsdk-l2vta-55238c5548.json")
+cred = credentials.Certificate("realtimefr-e7201-firebase-adminsdk-l2vta-55238c5548.json")
 firebase_admin.initialize_app(cred)
 
 def sendPush(title,msg,registration_token,dataObject=None):
