@@ -84,3 +84,5 @@ before making a exe file with pyinstaller let:
     def __init__(
         self, credential=None, session=None, base_url='', headers=None,
         retries=1, timeout=300):
+
+4. don't forget to copy the json file to folder 'dist/app' after making exe file with pysintaller
