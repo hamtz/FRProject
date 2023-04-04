@@ -3,182 +3,178 @@
 
 <head>
     <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Face Recognition Live Cam</title>
-    <!-- Favicon-->
-    <!--    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />-->
-    <!-- Font Awesome icons (free version)-->
+    <title>Face Recognition</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" />
+    <link href="assets/css/styles.css" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.1.0/js/all.js" crossorigin="anonymous"></script>
-    <!-- Google fonts-->
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css" />
-    <link href="https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet"
-        type="text/css" />
-    <!-- Core theme CSS (includes Bootstrap)-->
-    <!-- <link href="styles.css" rel="stylesheet" /> -->
-
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'styles.css') }}">
-
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
-        integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous"> -->
-
-
 </head>
 
-<body id="page-top">
+<body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <!-- Navbar Brand-->
+        <a class="navbar-brand ps-3" href="#">Face Recognition</a>
+        <!-- Sidebar Toggle-->
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i
+                class="fas fa-bars"></i></button>
+        <!-- Navbar Search-->
 
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.12.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.12.1/firebase-analytics.js";
-        import { getDatabase, ref, onValue, child, get } from "https://www.gstatic.com/firebasejs/9.12.1/firebase-database.js"
-        import { getFirestore, doc, onSnapshot, collection, getDoc } from "https://www.gstatic.com/firebasejs/9.12.1/firebase-firestore.js"
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-
-        // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-        const firebaseConfig = {
-            apiKey: "AIzaSyAKT2QoArXJFwoad4se-zjox44Y0AhmG2U",
-            authDomain: "realtimefr-e7201.firebaseapp.com",
-            databaseURL: "https://realtimefr-e7201-default-rtdb.firebaseio.com",
-            projectId: "realtimefr-e7201",
-            storageBucket: "realtimefr-e7201.appspot.com",
-            messagingSenderId: "440928093275",
-            appId: "1:440928093275:web:61759a7218fc6610376b7e",
-            measurementId: "G-ESQJBD9MSG"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const db = getFirestore(app);
-
-        //   BISA =======================================================================>
-        // const dbRef = ref(getDatabase());
-        // get(child(dbRef, `detected/name`)).then((snapshot) => {
-        //     if (snapshot.exists()) {
-        //         console.log(snapshot.val());
-        //         document.getElementById("output").innerHTML = snapshot.val();
-
-        //     } else {
-        //         console.log("No data available");
-        //     }
-        // }).catch((error) => {
-        //     console.error(error);
-        // });
-
-        // import { getDatabase, ref, onValue } from "firebase/database";
-
-        const dbase = getDatabase();
-        const starCountRef = ref(dbase, 'detected/name');
-        onValue(starCountRef, (snapshot) => {
-            const data = snapshot.val();
-            // updateStarCount(postElement, data);
-            document.getElementById("output").innerHTML = snapshot.val();
-            console.log(data)
-        });
+        <!-- Navbar-->
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            <li class="nav-item dropdown">
 
 
-        // const querySnapshot = await getDoc(collection(db, "detected"));
-        // querySnapshot.forEach((doc) => {
-        //     console.log(`name`);
-        // });
-
-        // function myFunction() {
-        //     const dbRef = ref(getDatabase());
-        //     get(child(dbRef, `detected/name`)).then((snapshot) => {
-        //         if (snapshot.exists()) {
-        //             const txt = snapshot.val()
-        //             // const obj = JSON.parse(txt);
-        //             document.getElementById("output").innerHTML = txt;
-
-        //             // console.log(snapshot.val());
-        //         } else {
-        //             console.log("No data available");
-        //         }
-        //     }).catch((error) => {
-        //         console.error(error);
-        //     });
-
-
-        //     //     var x = document.getElementById("mySelect").value;
-        //     //     document.getElementById("demo").innerHTML = "You selected: " + x;
-        // }
-
-
-
-
-    </script>
-
-    <!-- Navigation-->
-    <!-- <nav class="navbar navbar-expand-lg bg-secondary text-uppercase fixed-top" id="mainNav">
-        <div class="container">
-            <a class="navbar-brand" href="#page-top">Face Recognition</a>
-        </div>
-    </nav> -->
-    <nav class="navbar navbar-expand-lg bg-secondary text-uppercase fixed-top" id="mainNav">
-        <div class="container">
-            <ul class="navbar-nav">
-                <li class="nav-item active">
-                    <a class="navbar-brand" href="{{ url_for('index') }}">Face Recognition<span
-                            class="sr-only"></span></a>
-                </li>
-                <li>
-                    <a class="nav-link" href="{{ url_for('history') }}">History </span></a>
-                </li>
-                <!-- <li>
-                    <a class="nav-link" href="{{ url_for('upload_image') }}">Upload Image</span></a>
-                </li> -->
-                <!-- <li>
-                    <a class="nav-link" href="{{ url_for('setClassNames') }}">Upload Image</span></a>
-                </li> -->
-
-            </ul>
-        </div>
+            </li>
+        </ul>
     </nav>
-    <!-- Masthead-->
-    <header class="masthead bg-primary text-white text-center">
-        <div class="container d-flex align-items-center flex-column">
-            <div class="row">
-                <div class="col-lg-8">
-                    <h3 class="mt-5">Live Cam</h3>
-                    <img src="{{ url_for('video_feed') }}" id="livecam" width="100%">
-                </div>
-                <div class="col">
-                    <h3 class="mt-5">List Terdeteksi</h3>
-                    <div class="form-group">
-                        <!-- <label for="exampleFormControlTextarea1">List Terdeteksi</label> -->
-                        <!-- <input id="detectedPerson" name="list" type="text" class="form-control"> -->
-                        <p>
-                        <h4 id="output">-</h4>
-                        </p>
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Utama</div>
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <div class="sb-sidenav-menu-heading">Pengaturan</div>
+                        <a class="nav-link" href="{{ url_for('upload_image') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user fa-fw"></i></div>
+                            Daftar
+                        </a>
+                        <a class="nav-link" href="{{ url_for('history') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                            History
+                        </a>
 
                     </div>
                 </div>
-            </div>
+                <div class="sb-sidenav-footer">
+                    <div class="small">Logged in as:</div>
+                    Administrator
+                </div>
+            </nav>
         </div>
-    </header>
-    <!-- Copyright Section-->
-    <div class="copyright py-4 text-center text-white">
-        <div class="container"><small>Copyright &copy; Ilham Natsir 2022</small></div>
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Dashboard</h1>
+                    <ol class="breadcrumb mb-4">
+                        <!-- <li class="breadcrumb-item active">Dashboard</li> -->
+                    </ol>
+                    <div class="row mb-4">
+                    <div class="col">
+                        <a href="{{ url_for('shutdown') }}"  class="btn btn-outline-primary">Turn On/Off</a>
+                        <!-- <button type="button" >Turn On/Off</button> -->
+                    </div>
+                    </div>
+                    <div class="row ">
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <!-- <i class="fas fa-chart-area me-1"></i> -->
+                                    LIVE CAM
+                                </div>
+                                <div class="card-body">
+                                    <img class="rounded mx-auto d-block" id="livecam" src="{{ url_for('video_feed') }}"
+                                        alt="Girl in a jacket" width="480">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <!-- <i class="fas fa-chart-bar me-1"></i> -->
+                                    DETEKSI
+                                </div>
+                                <div class="card-body">
+                                    <h4 id="output" class="text-center">-</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; Ilham Natsir 2023</div>
+                        <div>
+                            <!-- <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a> -->
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+    <script src="assets/js/scripts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+    <script src="assets/assets/demo/chart-area-demo.js"></script>
+    <script src="assets/assets/demo/chart-bar-demo.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" crossorigin="anonymous"></script>
+    <script src="assets/js/datatables-simple-demo.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
 
-    <!-- Bootstrap core JS-->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Core theme JS-->
-    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
-    <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
-    <!-- * *                               SB Forms JS                               * *-->
-    <!-- * * Activate your form at https://startbootstrap.com/solution/contact-forms * *-->
-    <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
-    <script src=" https://cdn.startbootstrap.com/sb-forms-latest.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 
+    <script>
+        function push_notif() {
+            // create ajax
+            $.ajax({
+                url: 'http://127.0.0.1:5000/pushnotif', // Replace with your ajax url
+                type: 'GET',
+                dataType: 'json',
+                beforeSend: function (xhr) {
+                    // Do something before sending request
+                },
+                success: function (data) {
+                    document.getElementById("output").innerHTML = JSON.stringify(data);
+                    // alert('Data: '+data);
+                    console.log(data)
+                },
+                error: function (request, error) {
+                    // console.log("Request: " + JSON.stringify(request)); // Error callback
+                }
+            });
+        }
+        push_notif()
+        setInterval(push_notif, 5000);
+    </script>
 
-
-
-
+    <script>
+        function set_name() {
+            // create ajax
+            $.ajax({
+                url: 'http://127.0.0.1:5000/setname', // Replace with your ajax url
+                type: 'GET',
+                dataType: 'json',
+                beforeSend: function (xhr) {
+                    // Do something before sending request
+                },
+                success: function (data) {
+                    document.getElementById("output").innerHTML = JSON.stringify(data);
+                    // alert('Data: '+data);
+                    console.log(data)
+                },
+                error: function (request, error) {
+                    // console.log("Request: " + JSON.stringify(request)); // Error callback
+                }
+            });
+        }
+        set_name()
+        setInterval(set_name, 3000);
+    </script>
 </body>
 
 </html>

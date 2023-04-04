@@ -1,9 +1,11 @@
+import json
+
 from django.shortcuts import redirect
 # from flask import Flask, render_template, Response, url_for
 # import os
 
 import face_recognition
-from flask import Flask, redirect, url_for, render_template, request, flash, Response, send_from_directory
+from flask import Flask, redirect, url_for, render_template, request, flash, Response, send_from_directory, jsonify
 import cv2
 from PIL import Image
 import numpy as np
@@ -25,18 +27,21 @@ import os.path
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 # app = Flask(__name__)
-app = Flask(__name__, template_folder='templates')  # still relative to module
+app = Flask(__name__, template_folder='templates', static_folder='assets')  # still relative to module
 
 # camera = cv2.VideoCapture('rtsp://freja.hiof.no:1935/rtplive/_definst_/hessdalen03.stream')  # use 0 for web camera
 # camera = cv2.VideoCapture('http://192.168.43.31:81/stream')  # esp 32cam
-camera = cv2.VideoCapture(1)  # use 0 for web camera
+# camera = cv2.VideoCapture('rtsp://admin:admin123@192.168.1.108/cam/realmonitor?channel=1&subtype=1')  # cctv
+# camera = cv2.VideoCapture('http://192.168.43.21:8080/?action=stream')
+camera = cv2.VideoCapture(0)  # use 0 for web camera
+#
 
 #  for cctv camera use rtsp://username:password@ip_address:554/user=username_password='password'_channel=channel_number_stream=0.sdp' instead of camera
 # for local webcam use cv2.VideoCapture(0)
 
 # token my security android app
-# tokens = ["dM1vXSIISD-PI2xFdZVAW2:APA91bEeWk2HPe5obNoL8gyaLREufwrp9vubklvj7zBU9GK6V1-UQuinv0couFPw52pIQKWJvOBoNQoqgwdIhgz3HnmSKhM_-_p7O5MVTWJSy7EZZ1nwzH8vTZZPElDNFVlWLy_d3yTS"]
-tokens = ["eNIG8mXEQsOmbrpoM-ji2i:APA91bFLONQsjH_F1dAVJVbBx9lrgy9WHy8A5aWonGWS_Cw24o6Dgvo8jHOavodpKkmCdiXJ4kAqsGCZJLuMsLtj916D1OW8wSzPuFvrkMqPmT8kuxHKsPFayloaT6YQOsBrH6DbAReG"]
+tokens = [
+    "eNIG8mXEQsOmbrpoM-ji2i:APA91bHojqQckrSaQTUaCU7-9lWHppm7uTDBZ1fwkOaMZLrg12JIBbG476qaI6gjyOI38l8NrcASgXsmJTwv4J7RQv-82MyJP1k3LsELpRKDbXIh3SgHxJ3nUKnOcKNVfO07rVjOM3vz"]
 
 firebaseConfig = {"apiKey": "AIzaSyAKT2QoArXJFwoad4se-zjox44Y0AhmG2U", "authDomain": "realtimefr-e7201.firebaseapp.com",
                   "databaseURL": "https://realtimefr-e7201-default-rtdb.firebaseio.com/",
@@ -53,14 +58,13 @@ path = 'ImagesTrain'
 images = []
 classNames = []
 myList = os.listdir(path)
-print(myList)
 UPLOAD_FOLDER = 'ImagesTrain'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'JPG'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+print(myList)
 
-@app.route('/encodeCurrImage', methods=['GET', 'POST'])
-# def encodeCurrImage():
+
+# @app.route('/encodeCurrImage', methods=['GET', 'POST'])
 def setClassNames():
     # images = []
     # classNames = []
@@ -73,6 +77,8 @@ def setClassNames():
     print(classNames)
     # return redirect('/')
 
+
+# @app.route('/findencodings', methods=['GET', 'POST'])
 def findEncodings(images):
     encodeList = []
     for img in images:
@@ -80,14 +86,12 @@ def findEncodings(images):
         encode = face_recognition.face_encodings(img)[0]
         encodeList.append(encode)
         # db.child("encodeList").push(encodeList)
-
     return encodeList
 
 
 setClassNames()
 encodeListKnown = findEncodings(images)
 # db.child("encodeList").push(encodeListKnown)
-
 print('Encoding Complete')
 
 
@@ -107,8 +111,6 @@ def tesdetect(name):
 
 
 # set upload to firebase untuk realtime
-
-
 def setlistName(name):
     current_GMT = time.gmtime()
     time_stamp = calendar.timegm(current_GMT)
@@ -119,7 +121,6 @@ def setlistName(name):
     hari = int(thisday)
 
     data = {"name": name, "time": time_stamp}
-    # db.push(data)
     db.child("detected").set(data)
     print(name)
     pass
@@ -136,77 +137,86 @@ def pushlistName(name):
     hari = int(thisday)
 
     data = {"name": name, "time": time_stamp, "day": hari}
-    # db.push(data)
     db.child("history").push(data)
     pass
 
 
 def genFrames():  # generate frame by frame from camera
+    #   session["status"] = "Tidak Ada"
+    # cap = cv2.VideoCapture(0)
     while True:
-        # Capture frame-by-frame
-        success, frame = camera.read()  # read the camera frame
+        success, frame = camera.read()
         if not success:
             break
         else:
-            # imgS = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
-            # rgbImgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
-            rgbImgS = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # Resize frame of video to 1/4 size for faster face recognition processing
+            small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+            # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+            # rgbImg = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            rgb_small_frame = small_frame[:, :, ::-1]
+            face_locations = face_recognition.face_locations(rgb_small_frame)
+            # face_locations = face_recognition.face_locations(rgbImg)
+            curframe_encoding = face_recognition.face_encodings(rgb_small_frame, face_locations)
+            # curframe_encoding = face_recognition.face_encodings(rgbImg, face_locations)
 
+            if len(face_locations) == 0:
+                f = open("nama.json", "w")
+                f.write('{"nama" : "-"}')
+            else:
+                for encodeface, facelocation in zip(curframe_encoding, face_locations):
+                    results = face_recognition.compare_faces(encodeListKnown, encodeface)
+                    distance = face_recognition.face_distance(encodeListKnown, encodeface)
+                    print(distance)
+                    # print(results)
+                    match_index = np.argmin(distance)
 
-            facesCurFrame = face_recognition.face_locations(rgbImgS)
-            encodesCurFrame = face_recognition.face_encodings(rgbImgS, facesCurFrame)
+                    if results[match_index]:
+                        name = classNames[match_index].upper()
+                        # remove after "_" from name
+                        name = name.split("_")[0]
+                        f = open("nama.json", "w")
+                        f.write('{"nama" : "' + name + '"}')
+                        y1, x2, y2, x1 = facelocation
+                        # y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
+                        y1, x2, y2, x1 = y1 * 2, x2 * 2, y2 * 2, x1 * 2
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        setlistName(name)
+                        # pushlistName(name)
 
-            for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
-                matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
-                # name = "Unknown"
-                faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
+                        # cv2.rectangle(frame, (x1, y2 - 35), (x2, y2), (216, 138, 0), cv2.FILLED)
+                        # cv2.putText(frame, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
+                    else:
+                        name = "Unknown"
+                        f = open("nama.json", "w")
+                        f.write('{"nama" : "Unknown"}')
+                        setlistName(name)
+                        # pushlistName(name)
+                        y1, x2, y2, x1 = facelocation
+                        # y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
+                        y1, x2, y2, x1 = y1 * 2, x2 * 2, y2 * 2, x1 * 2
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-                print(faceDis)
-                matchIndex = np.argmin(faceDis)
-
-                if matches[matchIndex]:
-                    name = classNames[matchIndex].upper()
-                    # print(name)
-
-                    y1, x2, y2, x1 = faceLoc
-                    # y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4 //jika img diperkecil
-                    y1, x2, y2, x1 = y1, x2, y2, x1
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    # cv2.rectangle(frame, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
-                    # cv2.putText(frame, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
-
-                    setlistName(name)
-                    pushlistName(name)  # tesdetect(name)
-                else:
-                    name = "Unknown"
-                    y1, x2, y2, x1 = faceLoc
-                    # y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4 //jika img diperkecil
-                    y1, x2, y2, x1 = y1, x2, y2, x1
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    # print(name)
-                    setlistName(name)
-                    pushlistName(name)
-                    fcm.sendPush("Warning", "An unknown person has detected", tokens)
+                        # cv2.rectangle(frame, (x1, y2 - 35), (x2, y2), (216, 138, 0), cv2.FILLED)
+                        # cv2.putText(frame, "Unknown", (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
 
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
+            # return frame and the name
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
-#
-# @app.route('/restart', methods=['GET', 'POST'])
-# def restart():
-#     # encodeCurrImage()
-#     # print(classNames)
-#     # home_dir = os.system("cd ~")
-#     # print("`cd ~` ran with exit code %d" % home_dir)
-#     os.startfile("app.py")
-#     return redirect('/')
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 @app.route('/video_feed')
 def video_feed():
     # Video streaming route. Put this in the src attribute of an img tag
     return Response(genFrames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/shutdown')
+def shutdown():
+    camera.release()
+    # cv2.destroyAllWindows()
+    return render_template("index.html")
 
 
 # // home
@@ -239,72 +249,113 @@ def upload_image():
             flash('No file part')
             return redirect(request.url)
         file = request.files['file']
+        # extfile = file.split('.', 1)[1].lower()
+        # namafile = request.files['file'].filename
+        # file.filename = request.form['filename']+extfile
+
         # if user does not select file, browser also
         # submit an empty part without filename
         if file.filename == '':
             flash('No selected file')
             return redirect(request.url)
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
+        # if file and allowed_file(file.filename):
+        if file:
+            extfilename = secure_filename(file.filename).split('.', 1)[1].lower()
+            # filename = secure_filename(request.form['filename'])
+            filename = request.form['filename'] + '.' + extfilename
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            print(filename)
 
-            curImg = cv2.imread(file.filename)
-            images.append(curImg)
-            classNames.append(os.path.splitext(filename)[0])
-            data = classNames
-            db.child("classNames").set(data)
-            print(classNames)
+            try:
+                curImg = cv2.imread(file.filename)
+                images.append(curImg)
+                classNames.append(os.path.splitext(filename)[0])
+                # Tentukan path ke file gambar
+                # name = str(filename)
+                # imgPath = os.path.join("ImagesTrain", name)
+                # img = Image.open(imgPath)
+                imgUp = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                imgNump = asarray(imgUp)
+                img = cv2.cvtColor(imgNump, cv2.COLOR_BGR2RGB)
+                # imgRead = cv2.imread(img)
 
-            imgUp = Image.open(os.path.join(
-                app.config['UPLOAD_FOLDER'], filename))
-            imgNump = asarray(imgUp)
-            img = cv2.cvtColor(imgNump, cv2.COLOR_BGR2RGB)
-            addEncode = face_recognition.face_encodings(img)[0]
-            encodeListKnown.append(addEncode)
+                faceEncodings = face_recognition.face_encodings(img)
+                if len(faceEncodings) > 0:
+                    addEncode = faceEncodings[0]
+                    encodeListKnown.append(addEncode)
+
+                    data = classNames
+                    db.child("classNames").set(data)
+                    print(classNames)
+                    print("Berhasil menambahkan.")
+
+                else:
+                    print("Tidak ada wajah yang terdeteksi pada gambar.")
+                    return render_template("upload_image.html")
+
+
+                # addEncode = face_recognition.face_encodings(img)[0]
+                # encodeListKnown.append(addEncode)
+
+            except Exception as e:
+                print(f"Error: {str(e)}")
 
             return redirect(url_for('index'))
     return render_template("upload_image.html")
-    #
-    # '''
-    #     <!doctype html>
-    #     <title>Upload new File</title>
-    #     <h1>Upload new File</h1>
-    #     <form method=post enctype=multipart/form-data>
-    #       <input type=file name=file>
-    #       <input type=submit value=Upload>
-    #     </form>
-    #     '''
-
 
 
 # @app.route('/uploads/<filename>')
-@app.route('/uploads')
-def upload_success():
-    # send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+# @app.route('/uploads')
+# def upload_success():
+# send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+# setClassNames()
+# findEncodings(images)
+#
+# print("upload success")
+# print(myList)
+# return render_template("index.html")
 
-    print(myList)
 
-    return render_template("index.html")
+@app.route('/pushnotif')
+def pushnotif():
+    with open("nama.json") as f:
+        data = json.load(f)
+        nama = data["nama"]
+        if nama == "Unknown":
+            fcm.sendPush("Warning", "An unknown person has detected", tokens)
+            print("Unknown people detected")
+        return jsonify(nama)
 
-# GAGAL============================================================
-# @app.route('/upload_image', methods=['POST'])
-# def upload_image():
-#     if 'file' not in request.files:
-#         flash('No file part')
-#         return redirect(request.url)
-#     file = request.files['file']
-#     if file.filename == '':
-#         flash('No image selected for uploading')
-#         return redirect(request.url)
-#     if file and allowed_file(file.filename):
-#         filename = secure_filename(file.filename)
-#         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-#         print('upload_image filename: ' + filename)
-#         flash('Image successfully uploaded and displayed below')
-#         return render_template('upload.html', filename=filename)
-#     else:
-#         flash('Allowed image types are -> png, jpg, jpeg, gif')
-#         return redirect(request.url)
+
+@app.route('/setname')
+def setName():
+    with open("nama.json") as f:
+        data = json.load(f)
+        nama = data["nama"]
+        return jsonify(nama)
+
+
+# @app.route('/pushname')
+# def pushName():
+#     with open("nama.json") as f:
+#         data = json.load(f)
+#         nama = data["nama"]
+#         return jsonify(nama)
+
+# def checkEncode():
+#
+#     curImg = cv2.imread(file.filename)
+#     images.append(curImg)
+#     classNames.append(os.path.splitext(filename)[0])
+#     data = classNames
+#     db.child("classNames").set(data)
+#     print(classNames)
+#
+#     imgUp = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+#     imgNump = asarray(imgUp)
+#     img = cv2.cvtColor(imgNump, cv2.COLOR_BGR2RGB)
+#     addEncode = face_recognition.face_encodings(img)[0]
+#     encodeListKnown.append(addEncode)
 
 if __name__ == '__main__':
     app.run(debug=True)
