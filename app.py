@@ -1,28 +1,22 @@
+import calendar
+import datetime
 import json
+import os.path
+import time
 
-from django.shortcuts import redirect
-# from flask import Flask, render_template, Response, url_for
-# import os
-
-import face_recognition
-from flask import Flask, redirect, url_for, render_template, request, flash, Response, send_from_directory, jsonify
 import cv2
-from PIL import Image
+import face_recognition
 import numpy as np
+import pyrebase as pyrebase
+from PIL import Image
+from flask import Flask, redirect, url_for, render_template, request, flash, Response, jsonify
 from numpy import asarray
-
 from werkzeug.utils import secure_filename
 
-import datetime
-import time
-import calendar
-
-import threading
-
-import pyrebase
 import FCMManager as fcm
 
-import os.path
+# from flask import Flask, render_template, Response, url_for
+# import os
 
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
@@ -249,10 +243,6 @@ def upload_image():
             flash('No file part')
             return redirect(request.url)
         file = request.files['file']
-        # extfile = file.split('.', 1)[1].lower()
-        # namafile = request.files['file'].filename
-        # file.filename = request.form['filename']+extfile
-
         # if user does not select file, browser also
         # submit an empty part without filename
         if file.filename == '':
@@ -264,43 +254,49 @@ def upload_image():
             # filename = secure_filename(request.form['filename'])
             filename = request.form['filename'] + '.' + extfilename
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            print(filename)
+            if True:
+                print(filename)
+                time.sleep(3)
+                try:
+                    pathFile= os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    curImg = cv2.imread(pathFile)
 
-            try:
-                curImg = cv2.imread(file.filename)
-                images.append(curImg)
-                classNames.append(os.path.splitext(filename)[0])
-                # Tentukan path ke file gambar
-                # name = str(filename)
-                # imgPath = os.path.join("ImagesTrain", name)
-                # img = Image.open(imgPath)
-                imgUp = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                imgNump = asarray(imgUp)
-                img = cv2.cvtColor(imgNump, cv2.COLOR_BGR2RGB)
-                # imgRead = cv2.imread(img)
+                    # Tentukan path ke file gambar
+                    # name = str(filename)
+                    # imgPath = os.path.join("ImagesTrain", name)
+                    # img = Image.open(imgPath)
+                    imgUp = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    imgNump = asarray(imgUp)
+                    img = cv2.cvtColor(imgNump, cv2.COLOR_BGR2RGB)
+                    # imgRead = cv2.imread(img)
 
-                faceEncodings = face_recognition.face_encodings(img)
-                if len(faceEncodings) > 0:
-                    addEncode = faceEncodings[0]
-                    encodeListKnown.append(addEncode)
+                    faceEncodings = face_recognition.face_encodings(img)
+                    if len(faceEncodings) > 0:
+                        addEncode = faceEncodings[0]
+                        encodeListKnown.append(addEncode)
+                        if encodeListKnown:
+                            if True:
+                                images.append(curImg)
+                                classNames.append(os.path.splitext(filename)[0])
+                                data = classNames
+                                db.child("classNames").set(data)
+                                print(classNames)
+                                print("Berhasil menambahkan.")
+                            else:
+                                print("Gagal menambahkan.")
 
-                    data = classNames
-                    db.child("classNames").set(data)
-                    print(classNames)
-                    print("Berhasil menambahkan.")
+                    else:
+                        # images.remove(curImg)
+                        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                        print("Tidak ada wajah yang terdeteksi pada gambar.")
+                        return render_template("upload_image.html")
 
-                else:
-                    print("Tidak ada wajah yang terdeteksi pada gambar.")
-                    return render_template("upload_image.html")
+                except Exception as e:
+                    print(f"Error: {str(e)}")
 
-
-                # addEncode = face_recognition.face_encodings(img)[0]
-                # encodeListKnown.append(addEncode)
-
-            except Exception as e:
-                print(f"Error: {str(e)}")
-
-            return redirect(url_for('index'))
+                return redirect(url_for('index'))
+            else:
+                print("gagal upload file")
     return render_template("upload_image.html")
 
 
