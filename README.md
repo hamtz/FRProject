@@ -30,7 +30,7 @@ buffer.tobytes()
 
 
 ## to build .py script to exe using pyinstaller
-in this project i use this library version
+in this project i use python 3.8 and this library version
 ~dlib==19.21.1
 ~face-recognition==1.3.0
 ~firebase-admin==6.1.0
