@@ -15,23 +15,14 @@ from werkzeug.utils import secure_filename
 
 import FCMManager as fcm
 
-# from flask import Flask, render_template, Response, url_for
-# import os
-
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
-# app = Flask(__name__)
-app = Flask(__name__, template_folder='templates', static_folder='assets')  # still relative to module
 
 # camera = cv2.VideoCapture('rtsp://freja.hiof.no:1935/rtplive/_definst_/hessdalen03.stream')  # use 0 for web camera
 # camera = cv2.VideoCapture('http://192.168.43.31:81/stream')  # esp 32cam
 # camera = cv2.VideoCapture('rtsp://admin:admin123@192.168.1.108/cam/realmonitor?channel=1&subtype=1')  # cctv
 # camera = cv2.VideoCapture('http://192.168.43.21:8080/?action=stream')
 camera = cv2.VideoCapture(0)  # use 0 for web camera
-#
-
-#  for cctv camera use rtsp://username:password@ip_address:554/user=username_password='password'_channel=channel_number_stream=0.sdp' instead of camera
-# for local webcam use cv2.VideoCapture(0)
 
 # token my security android app
 tokens = [
@@ -44,26 +35,29 @@ firebaseConfig = {"apiKey": "AIzaSyAKT2QoArXJFwoad4se-zjox44Y0AhmG2U", "authDoma
                   "measurementId": "G-ESQJBD9MSG"}
 
 firebase = pyrebase.initialize_app(firebaseConfig)
-
 db = firebase.database()
 
-path = 'ImagesTrain'
-# path = r"C:\Users\Riku\Documents\Titip\Ilham\Kuliax\App\FR\ImagesTrain"
 images = []
 classNames = []
-myList = os.listdir(path)
-UPLOAD_FOLDER = 'ImagesTrain'
+facePath = 'static/faces'
+myList = os.listdir(facePath)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'JPG'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 print(myList)
+
+
+
+#Defining Flask App
+app = Flask(__name__, template_folder='templates', static_folder='assets')  # still relative to module
+
+#### If these directories don't exist, create them
+if not os.path.isdir('static/faces'):
+    os.makedirs('static/faces')
 
 
 # @app.route('/encodeCurrImage', methods=['GET', 'POST'])
 def setClassNames():
-    # images = []
-    # classNames = []
     for cl in myList:
-        curImg = cv2.imread(f'{path}/{cl}')
+        curImg = cv2.imread(f'{facePath}/{cl}')
         images.append(curImg)
         classNames.append(os.path.splitext(cl)[0])
         data = classNames
@@ -85,34 +79,16 @@ def findEncodings(images):
 
 setClassNames()
 encodeListKnown = findEncodings(images)
-# db.child("encodeList").push(encodeListKnown)
 print('Encoding Complete')
-
-
-def tesdetect(name):
-    # current_GMT = time.gmtime()
-    # time_stamp = calendar.timegm(current_GMT)
-    #
-    # # KONVERSI HARI KE EPOCH TIME
-    # today = datetime.date.today()
-    # thisday = time.mktime(today.timetuple())
-    # hari = int(thisday)
-    #
-    # data = {"name": name, "time": time_stamp,"day":hari}
-
-    print(name)
-    pass
-
 
 # set upload to firebase untuk realtime
 def setlistName(name):
+    # GMT time
     current_GMT = time.gmtime()
     time_stamp = calendar.timegm(current_GMT)
-
     # KONVERSI HARI KE EPOCH TIME
     today = datetime.date.today()
     thisday = time.mktime(today.timetuple())
-    hari = int(thisday)
 
     data = {"name": name, "time": time_stamp}
     db.child("detected").set(data)
@@ -122,9 +98,9 @@ def setlistName(name):
 
 # push upload to firebase untuk log history
 def pushlistName(name):
+    # GMT time
     current_GMT = time.gmtime()
     time_stamp = calendar.timegm(current_GMT)
-
     # KONVERSI HARI KE EPOCH TIME
     today = datetime.date.today()
     thisday = time.mktime(today.timetuple())
@@ -175,7 +151,7 @@ def genFrames():  # generate frame by frame from camera
                         y1, x2, y2, x1 = y1 * 2, x2 * 2, y2 * 2, x1 * 2
                         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                         setlistName(name)
-                        # pushlistName(name)
+                        pushlistName(name)
 
                         # cv2.rectangle(frame, (x1, y2 - 35), (x2, y2), (216, 138, 0), cv2.FILLED)
                         # cv2.putText(frame, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
@@ -184,7 +160,7 @@ def genFrames():  # generate frame by frame from camera
                         f = open("nama.json", "w")
                         f.write('{"nama" : "Unknown"}')
                         setlistName(name)
-                        # pushlistName(name)
+                        pushlistName(name)
                         y1, x2, y2, x1 = facelocation
                         # y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
                         y1, x2, y2, x1 = y1 * 2, x2 * 2, y2 * 2, x1 * 2
@@ -198,6 +174,12 @@ def genFrames():  # generate frame by frame from camera
             # return frame and the name
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+@app.route('/')
+def index():
+    """Video streaming home page."""
+    return render_template("index.html")
 
 
 @app.route('/video_feed')
@@ -216,12 +198,6 @@ def shutdown():
 # // home
 def generate_report():
     return "generating report"
-
-
-@app.route('/')
-def index():
-    """Video streaming home page."""
-    return render_template("index.html")
 
 
 @app.route('/histori')
@@ -253,19 +229,19 @@ def upload_image():
             extfilename = secure_filename(file.filename).split('.', 1)[1].lower()
             # filename = secure_filename(request.form['filename'])
             filename = request.form['filename'] + '.' + extfilename
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            file.save(os.path.join(facePath, filename))
             if True:
                 print(filename)
                 time.sleep(3)
                 try:
-                    pathFile= os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    pathFile= os.path.join(facePath, filename)
                     curImg = cv2.imread(pathFile)
 
                     # Tentukan path ke file gambar
                     # name = str(filename)
                     # imgPath = os.path.join("ImagesTrain", name)
                     # img = Image.open(imgPath)
-                    imgUp = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    imgUp = Image.open(os.path.join(facePath, filename))
                     imgNump = asarray(imgUp)
                     img = cv2.cvtColor(imgNump, cv2.COLOR_BGR2RGB)
                     # imgRead = cv2.imread(img)
@@ -287,7 +263,7 @@ def upload_image():
 
                     else:
                         # images.remove(curImg)
-                        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                        os.remove(os.path.join(facePath, filename))
                         print("Tidak ada wajah yang terdeteksi pada gambar.")
                         return render_template("upload_image.html")
 
@@ -298,18 +274,6 @@ def upload_image():
             else:
                 print("gagal upload file")
     return render_template("upload_image.html")
-
-
-# @app.route('/uploads/<filename>')
-# @app.route('/uploads')
-# def upload_success():
-# send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-# setClassNames()
-# findEncodings(images)
-#
-# print("upload success")
-# print(myList)
-# return render_template("index.html")
 
 
 @app.route('/pushnotif')
@@ -338,20 +302,6 @@ def setName():
 #         nama = data["nama"]
 #         return jsonify(nama)
 
-# def checkEncode():
-#
-#     curImg = cv2.imread(file.filename)
-#     images.append(curImg)
-#     classNames.append(os.path.splitext(filename)[0])
-#     data = classNames
-#     db.child("classNames").set(data)
-#     print(classNames)
-#
-#     imgUp = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-#     imgNump = asarray(imgUp)
-#     img = cv2.cvtColor(imgNump, cv2.COLOR_BGR2RGB)
-#     addEncode = face_recognition.face_encodings(img)[0]
-#     encodeListKnown.append(addEncode)
 
 if __name__ == '__main__':
     app.run(debug=True)
