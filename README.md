@@ -30,6 +30,13 @@ buffer.tobytes()
 
 
 ## to build .py script to exe using pyinstaller
+in this project i use python 3.8 and this library version
+~dlib==19.21.1
+~face-recognition==1.3.0
+~firebase-admin==6.1.0
+~Flask==2.2.3
+~opencv-python==4.5.3.56
+
 
 1. first create a spec file and exclude the PyQt5 module
 
